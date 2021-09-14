@@ -1,0 +1,8 @@
+[
+  { "op": "move", "from": "/data/MaschineID", "path": "/data/id" },
+  { "op": "add", "path": "/data/name", "value": "" },
+  { "op": "add", "path": "/data/iotDevice", "value": {} },
+  { "op": "move", "from": "/data/SystemID", "path": "/data/iotDevice/systemId" },
+  { "op": "move", "from": "/data/PlugID", "path": "/data/iotDevice/plugId" },
+  { "op": "move", "from": "/data/values", "path": "/data/telemetries" }
+]

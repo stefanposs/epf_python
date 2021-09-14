@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: epf
+Version: 0.1
+Summary: An Event-Driven Framework for data processing in the cloud
+Home-page: https://github.com/stefanposs/epf
+Author: Stefan Poss
+Author-email: sp@stefanposs.de
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+
+UNKNOWN
+
