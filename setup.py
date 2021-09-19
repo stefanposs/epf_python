@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setup(
      name='epf',
      version='0.1',
-     scripts=['epf'] ,
+     scripts=['lib'],
      author="Stefan Poss",
      author_email="sp@stefanposs.de",
      description="An Event-Driven Framework for data processing in the cloud",

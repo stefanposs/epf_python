@@ -2,66 +2,65 @@ import asyncio
 import os
 import sys
 sys.path.append(os.getcwd())
-from lib.infrastructure.azure import azBlobClient
-from lib.models.base import baseEvent
-from lib.infrastructure.repository.base import baseRepository
+from lib.infrastructure.azure.azBlobClient import AzBlobClient
+from lib.models.base.baseEvent import BaseEvent
+from lib.infrastructure.repository.base.baseRepository import BaseRepository
 
 
-class BronzeEventLayerRepository(baseRepository.BaseRepository):
+class BronzeEventLayerRepository(BaseRepository):
 
-    __azBlobClient: azBlobClient.AzBlobClient
+    __azBlobClient: AzBlobClient
 
     def __init__(
         self,
-        azBlobClient: azBlobClient.AzBlobClient
+        azBlobClient: AzBlobClient
     ):
-        self.__azBlobClient = azBlobClient
+        if azBlobClient is not None:
+            self.__azBlobClient = azBlobClient
+        else:
+            self.__azBlobClient = None
     """
     getter/setter methods
     """
-
-    def get_azBlobClient(self) -> azBlobClient.AzBlobClient:
+    def get_azBlobClient(self) -> AzBlobClient:
         return self.__azBlobClient
 
-    def set_azBlobClient(self, azBlobClient: azBlobClient.AzBlobClient) -> None:
+    def set_azBlobClient(self, azBlobClient: AzBlobClient) -> None:
         self.__azBlobClient = azBlobClient
 
     """
     methods
     """
-    async def error(self, event: baseEvent.BaseEvent) -> None:
+    async def error(self, event: BaseEvent) -> None:
         loop = asyncio.get_event_loop()
 
         loop.run_until_complete(
             
             self.__azBlobClient.createBlob(
                 fileName=event.meta.uuid,
-                fileContent=str(event),
+                fileContent=str(event.json()),
                 container='machinetelemetry-bronze-error',
             )
+
             
         )
 
+    async def processed(self, event: BaseEvent) -> None:
 
-    async def processed(self, event: baseEvent.BaseEvent) -> None:
-        loop = asyncio.get_event_loop()
-
-        loop.run_until_complete(
-            self.__azBlobClient.createBlob(
+            await self.__azBlobClient.createBlob(
                 fileName=event.meta.uuid,
-                fileContent=str(event),
+                fileContent=str(event.json()),
                 container='machinetelemetry-bronze-processed',
             )
-        )
 
 
-    async def raw(self, event: baseEvent.BaseEvent) -> None:
-        loop = asyncio.get_event_loop()
+    async def raw(self, event: BaseEvent) -> None:
 
-        loop.run_until_complete(
-            self.__azBlobClient.createBlob(
+            await self.__azBlobClient.createBlob(
                 fileName=event.meta.uuid,
-                fileContent=str(event),
+                fileContent=str(event.json()),
                 container='machinetelemetry-bronze-raw',
             )
-        )
+
+
+

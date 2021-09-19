@@ -1,7 +1,7 @@
 import os, sys
 sys.path.append(os.getcwd())
 from azure.storage.blob.aio import BlobClient, BlobServiceClient
-from lib.services import log
+from lib.services.log import Log
 
 
 class AzBlobClient:
@@ -25,7 +25,7 @@ class AzBlobClient:
         Prints the person's name and age.
     """
     __conString: str
-    __log: log.Log
+    __log: Log
 
     def __init__(
         self,
@@ -46,7 +46,7 @@ class AzBlobClient:
         None
         """
         self.__conString = conString
-        self.__Logging = log.Log()
+        self.__log = Log()
 
     """
     getter/setter methods
@@ -66,16 +66,16 @@ class AzBlobClient:
         blobClient = BlobClient.from_connection_string(
             conn_str=self.__conString,
             container_name=container,
-            blob_name=fileName
+            blob_name=str(fileName + '.json')
         )
         async with blobClient:
             try:
                 await blobClient.upload_blob(
-                    fileContent,
-                    overwrite=True
+                    data=fileContent,
+                    overwrite=True,
                 )
             except Exception as err:
-                self.__log.error(str(__class__.__name__)+':'+str(err))
+                self.__log.error(str(__class__.__name__), str(err))
 
     async def deleteBlob(
         self,
@@ -87,14 +87,14 @@ class AzBlobClient:
         )
         async with blobServiceClient:
             blobClient = blobServiceClient.get_blob_client(
-                container,
-                fileName,
+                container=container,
+                fileName=str(fileName + '.json'),
                 snapshot=None
             )
             try:
                 blobData = await blobClient.delete_blob()
             except Exception as err:
-                self.__log.error(str(err))
+                self.__log.error(str(__class__.__name__), str(err))
 
     async def updateBlob(
         self,
@@ -114,8 +114,8 @@ class AzBlobClient:
         )
         async with blobServiceClient:
             blobClient = blobServiceClient.get_blob_client(
-                container,
-                fileName,
+                container=container,
+                fileName=str(fileName + '.json'),
                 snapshot=None
             )
             try:
@@ -125,5 +125,5 @@ class AzBlobClient:
                     encoding='UTF-8'
                 )
             except Exception as err:
-                self.__log.error(str(err))
+                self.__log.error(str(__class__.__name__), str(err))
         return data

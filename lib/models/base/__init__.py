@@ -1,5 +1,5 @@
 from . import baseEvent
-from .baseMeta import BaseMeta
+from . import baseMeta
 from . import baseTarget
 from . import baseLayer
 from . import baseSource

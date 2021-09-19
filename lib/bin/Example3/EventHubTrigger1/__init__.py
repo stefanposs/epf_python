@@ -1,13 +1,17 @@
+import asyncio
 import json
 import sys
+import uuid
 from os import path
 from typing import List
 
+
 sys.path.append(path.abspath('../../../'))
-from lib.models.base import baseEvent
-from lib.infrastructure.repository import bronzeEventLayerRepository
-from lib.infrastructure.azure import azBlobClient
-from lib.services import bronzeEventLayer, log
+from lib.models.base.baseEvent import BaseEvent
+from lib.infrastructure.repository.bronzeEventLayerRepository import BronzeEventLayerRepository
+from lib.infrastructure.azure.azBlobClient import AzBlobClient
+from lib.services.bronzeEventLayer import BronzeEventLayer
+from lib.services.log import Log
 
 import azure.functions as func
 
@@ -28,15 +32,16 @@ main
 """
 
 
-def main(events: List[func.EventHubEvent]):
+async def main(events: List[func.EventHubEvent]):
     """ Initialize """
-    global broEventLayer
-    global silEventLayer
-    global golEventLayer
+    global bronzeEventLayer
+    global silerEventLayer
+    global goldEventLayer
     global storage
     global logging
+    global bronzeProcessLayerRepository
 
-    logging = log.Log()
+    logging = Log()
 
     logging.info(getLabel(), 'Initialize')
 
@@ -46,16 +51,16 @@ def main(events: List[func.EventHubEvent]):
         with open(path.join(script_dir, params.params['layer']['bronzeEventLayer']['inputSchemaFilePath']), 'r') as json_file:
             params.params['layer']['bronzeEventLayer']['inputSchema'] = json.load(json_file)
 
-    storage = azBlobClient.AzBlobClient(
+    storage = AzBlobClient(
         conString=params.params['layer']['bronzeEventLayer']['storage']['azure']['blob']['conString']
     )
-
-    broEventLayer = bronzeEventLayer.BronzeEventLayer(
+    bronzeProcessLayerRepository = BronzeEventLayerRepository(
+        azBlobClient=storage,
+    )
+    bronzeEventLayer = BronzeEventLayer(
         inputSchema=params.params['layer']['bronzeEventLayer']['inputSchema'],
         outputSchema=params.params['layer']['bronzeEventLayer']['inputSchema'],
-        processLayerRepository=bronzeEventLayerRepository.BronzeEventLayerRepository(
-            azBlobClient=storage,
-        )
+        processLayerRepository=bronzeProcessLayerRepository
     )
     """ Initialize: SilverEventLayer """
 
@@ -64,16 +69,35 @@ def main(events: List[func.EventHubEvent]):
     for item in events:
         """ Procesing """
         itemBody = json.loads(item.get_body().decode('utf-8'))
-        e = baseEvent.BaseEvent(data=itemBody['data'], meta=itemBody['meta'])
+        e = BaseEvent(data=itemBody['data'], meta=itemBody['meta'])
         """ Procesing: BronzeEventLayer """
         """ Procesing: BronzeEventLayer checking input """
-        if broEventLayer.isInputValid(inputEvent=e):
+        # bronzeEventLayer.processed(event=e)
+        if bronzeEventLayer.isInputValid(inputEvent=e):
+            e.meta.uuid = str(uuid.uuid4())
+            #e.meta.layer = dict(BaseLayer(name=__name__, entryTimeStampUtc='', message='valid'))
+
             logging.info(
                 getLabel(),
-                'event: ' + str(e.meta.uuid) + '  ' + ' Event input is valid'
+                'event: ' + str(e.json()) + ',  ' + 'Event input is valid'
             )
-            pass
-        """ Procesing: BronzeEventLayer store and process """
+            """ Procesing: BronzeEventLayer store and process """
+            try:
+                await bronzeEventLayer.processed(event=e)
+                logging.info(
+                    getLabel(),
+                    'event: ' + str(e.meta.uuid) + ',  ' + 'Event is processed and stored'
+                )
+            except Exception as err:
+                logging.error(
+                    getLabel(),
+                    'event: ' + str(e.meta.uuid) + ',  ' + 'Event cannot processed and stored'
+                )
+        else:
+            logging.error(
+                getLabel(),
+                'event: ' + str(e.meta.uuid) + ', ' + 'Event is not valid'
+            )
 
         """ Procesing: SilverEventLayer """
         """ Procesing: SilverEventLayer check input """

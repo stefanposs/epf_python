@@ -5,16 +5,16 @@ from jsonschema import Draft7Validator
 sys.path.append(os.getcwd())
 from pydantic import json
 from lib.infrastructure.repository import bronzeEventLayerRepository
-from lib.services.base import baseEventLayer
-from lib.models.base import baseEvent
-from lib.services import log
+from lib.services.base.baseEventLayer import BaseEventLayer
+from lib.models.base.baseEvent import BaseEvent
+from lib.services.log import Log
 
 
-class BronzeEventLayer(baseEventLayer.BaseEventLayer):
+class BronzeEventLayer(BaseEventLayer):
     __inputSchema: json
     __outputSchema: json
     __processLayerRepository: bronzeEventLayerRepository
-    __log: log.Log
+    __log: Log
 
     def __init__(
         self,
@@ -25,6 +25,7 @@ class BronzeEventLayer(baseEventLayer.BaseEventLayer):
         self.__inputSchema = inputSchema
         self.__outputSchema = outputSchema
         self.__processLayerRepository = processLayerRepository
+        self.__log = Log()
 
     """
     getter/setter methods
@@ -41,20 +42,26 @@ class BronzeEventLayer(baseEventLayer.BaseEventLayer):
     def set_outputSchema(self, outputSchema: json) -> None:
         self.__outputSchema = outputSchema
 
-    def isInputValid(self, inputEvent: baseEvent.BaseEvent) -> bool:
+    def isInputValid(self, inputEvent: BaseEvent) -> bool:
         res = False
-        return res
-
-    def isOutputValid(self, outputEvent: baseEvent.BaseEvent) -> bool:
-        res = False
-        if self.__isValid(event=outputEvent, schema=self.__inputSchema):
+        if self.__isValid(event=inputEvent, schema=self.__inputSchema):
             res = True
         return res
 
-    def __isValid(self, event: baseEvent.BaseEvent, schema: json) -> bool:
+    def isOutputValid(self, outputEvent: BaseEvent) -> bool:
+        res = False
+        if self.__isValid(event=outputEvent, schema=self.__outputSchema):
+            res = True
+        return res
+
+    async def processed(self, event: BaseEvent) -> None:
+        await self.__processLayerRepository.raw(event=event)
+        await self.__processLayerRepository.processed(event=event)
+
+    def __isValid(self, event: BaseEvent, schema: json) -> bool:
         res = False
         try:
-            if validate(instance=event, schema=self.schema) is None:
+            if validate(instance=event, schema=dict(schema)) is None:
                 res = True
         except Exception as err:
             self.__log.error(
@@ -64,6 +71,6 @@ class BronzeEventLayer(baseEventLayer.BaseEventLayer):
             res = False
         return res
 
-    def MetaAddLayerEnquedTime(self, event: baseEvent.BaseEvent) -> bool:
+    def MetaAddLayerEnquedTime(self, event: BaseEvent) -> bool:
         res = False
         return res

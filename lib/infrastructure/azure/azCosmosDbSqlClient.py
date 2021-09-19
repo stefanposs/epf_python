@@ -5,7 +5,7 @@ import os
 
 from azure.cosmos import CosmosClient, PartitionKey
 
-from lib.services import log
+from lib.services.log import Log
 
 
 class AzCosmosDbSqlClient:
@@ -31,7 +31,7 @@ class AzCosmosDbSqlClient:
     __conString: str
     __containerName: str
     __databaseName: str
-    __log: log.Log
+    __log: Log
 
     def __init__(
         self,
@@ -42,7 +42,7 @@ class AzCosmosDbSqlClient:
         self.__conString = conString
         self.__containerName = containerName
         self.__databaseName = databaseName
-        self.__log = log.Log()
+        self.__log = Log()
 
     """
     getter/setter methods

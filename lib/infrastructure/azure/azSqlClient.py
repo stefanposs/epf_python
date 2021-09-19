@@ -1,12 +1,12 @@
 import os, sys
 sys.path.append(os.getcwd())
-from lib.services import log
+from lib.services.log import Log
 
 
 class AzSqlClient:
     __conString: str
     __containerName: str
-    __log: log
+    __log: Log
 
     def __init__(
             self,
@@ -15,6 +15,7 @@ class AzSqlClient:
     ):
         self.__conString = conString
         self.__containerName = containerName
+        self.__log = Log()
 
     async def insert(
             self,
