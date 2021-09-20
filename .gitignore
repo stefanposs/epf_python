@@ -8,6 +8,7 @@
 .vscode
 **/.vscode
 **/params.py
+*params.py
 dist
 **/dist
 build
