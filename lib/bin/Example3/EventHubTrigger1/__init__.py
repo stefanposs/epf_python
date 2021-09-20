@@ -1,13 +1,14 @@
 import asyncio
+import datetime
 import json
 import sys
 import uuid
 from os import path
 from typing import List
 
-
 sys.path.append(path.abspath('../../../'))
 from lib.models.base.baseEvent import BaseEvent
+from lib.models.base.baseLayer import BaseLayer
 from lib.infrastructure.repository.bronzeEventLayerRepository import BronzeEventLayerRepository
 from lib.infrastructure.azure.azBlobClient import AzBlobClient
 from lib.services.bronzeEventLayer import BronzeEventLayer
@@ -30,8 +31,6 @@ def getLabel() -> str:
 """
 main
 """
-
-
 async def main(events: List[func.EventHubEvent]):
     """ Initialize """
     global bronzeEventLayer
@@ -67,41 +66,39 @@ async def main(events: List[func.EventHubEvent]):
     """ Initialize: GoldEventLayer """
 
     for item in events:
-        """ Procesing """
+        """ Process """
         itemBody = json.loads(item.get_body().decode('utf-8'))
         e = BaseEvent(data=itemBody['data'], meta=itemBody['meta'])
-        """ Procesing: BronzeEventLayer """
-        """ Procesing: BronzeEventLayer checking input """
-        # bronzeEventLayer.processed(event=e)
+        """ Process: BronzeEventLayer """
+        """ Process: BronzeEventLayer checking input """
         if bronzeEventLayer.isInputValid(inputEvent=e):
-            e.meta.uuid = str(uuid.uuid4())
-            #e.meta.layer = dict(BaseLayer(name=__name__, entryTimeStampUtc='', message='valid'))
-
             logging.info(
                 getLabel(),
                 'event: ' + str(e.json()) + ',  ' + 'Event input is valid'
             )
-            """ Procesing: BronzeEventLayer store and process """
+            """ Process: BronzeEventLayer store and process """
             try:
-                await bronzeEventLayer.processed(event=e)
-                logging.info(
+                await bronzeEventLayer.process(event=e, msg='valid')
+                logging.debug(
                     getLabel(),
                     'event: ' + str(e.meta.uuid) + ',  ' + 'Event is processed and stored'
                 )
             except Exception as err:
+                await bronzeEventLayer.error(event=e, msg=str(err))
                 logging.error(
                     getLabel(),
                     'event: ' + str(e.meta.uuid) + ',  ' + 'Event cannot processed and stored'
                 )
         else:
+            await bronzeEventLayer.error(event=e, msg='Event is not valid')
             logging.error(
                 getLabel(),
                 'event: ' + str(e.meta.uuid) + ', ' + 'Event is not valid'
             )
 
-        """ Procesing: SilverEventLayer """
-        """ Procesing: SilverEventLayer check input """
-        """ Procesing: SilverEventLayer store and process """
-        """ Procesing: GoldEventLayer """
-        """ Procesing: GoldEventLayer check input """
-        """ Procesing: GoldEventLayer store and process """
+        """ Process: SilverEventLayer """
+        """ Process: SilverEventLayer check input """
+        """ Process: SilverEventLayer store and process """
+        """ Process: GoldEventLayer """
+        """ Process: GoldEventLayer check input """
+        """ Process: GoldEventLayer store and process """

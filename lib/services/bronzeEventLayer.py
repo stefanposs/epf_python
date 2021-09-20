@@ -1,9 +1,17 @@
+import collections
 import os
 import sys
+import uuid
+import datetime
+
 from jsonschema import validate
 from jsonschema import Draft7Validator
+
+
+
 sys.path.append(os.getcwd())
 from pydantic import json
+from lib.models.base.baseLayer import BaseLayer
 from lib.infrastructure.repository import bronzeEventLayerRepository
 from lib.services.base.baseEventLayer import BaseEventLayer
 from lib.models.base.baseEvent import BaseEvent
@@ -54,10 +62,42 @@ class BronzeEventLayer(BaseEventLayer):
             res = True
         return res
 
-    async def processed(self, event: BaseEvent) -> None:
+    async def process(self, event: BaseEvent, msg: str) -> None:
+        if event.meta.uuid is None:
+            event.meta.uuid = str(uuid.uuid4())
+        if event.meta.layer is None:
+            event.meta.layer = []
+        self.__log.info(
+            "getLabel()",
+            str(event.meta.layer)
+        )
+        event.meta.layer.append(
+            BaseLayer(
+                name='.' + __name__ + '.' + 'BronzeEventLayer',
+                entryTimeStampUtc=str(datetime.datetime.utcnow().isoformat()[:-3] + 'Z'),
+                message=msg
+            )
+        )
         await self.__processLayerRepository.raw(event=event)
         await self.__processLayerRepository.processed(event=event)
 
+    async def error(self, event: BaseEvent, msg: str) -> None:
+        if event.meta.uuid is None:
+            event.meta.uuid = str(uuid.uuid4())
+        if event.meta.layer is None:
+            event.meta.layer = []
+        self.__log.info(
+            "getLabel()",
+            str(event.meta.layer)
+        )
+        event.meta.layer.append(
+            BaseLayer(
+                name='.' + __name__ + '.' + 'BronzeEventLayer',
+                entryTimeStampUtc=str(datetime.datetime.utcnow().isoformat()[:-3] + 'Z'),
+                message=msg
+            )
+        )
+        await self.__processLayerRepository.error(event=event)
     def __isValid(self, event: BaseEvent, schema: json) -> bool:
         res = False
         try:
